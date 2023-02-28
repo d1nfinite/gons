@@ -1,4 +1,4 @@
-package netstat
+package gons
 
 import (
 	"fmt"

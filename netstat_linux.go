@@ -1,6 +1,6 @@
 //go:build linux
 
-package netstat
+package gons
 
 import (
 	"net"
