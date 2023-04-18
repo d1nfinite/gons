@@ -210,7 +210,7 @@ func parseIPv6(ips string) (net.IP, error) {
 			return nil, err
 		}
 
-		ip = binary.LittleEndian.AppendUint32(ip, uint32(v))
+		binary.LittleEndian.PutUint32(ip[i*4:], uint32(v))
 	}
 	return ip, nil
 }
