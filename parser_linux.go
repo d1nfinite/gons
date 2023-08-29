@@ -135,7 +135,7 @@ func Parse(device io.Reader, opts ...ParseOptionSet) ([]Socket, error) {
 
 		// foreign address
 		foreign := fields[2]
-		if len(strings.Split(local, ":")) != 2 {
+		if len(strings.Split(foreign, ":")) != 2 {
 			continue
 		} else {
 			var (
@@ -143,9 +143,9 @@ func Parse(device io.Reader, opts ...ParseOptionSet) ([]Socket, error) {
 				err error
 			)
 			if o.ipv6 {
-				ip, err = parseIPv6(strings.Split(local, ":")[0])
+				ip, err = parseIPv6(strings.Split(foreign, ":")[0])
 			} else {
-				ip, err = parseIPv4(strings.Split(local, ":")[0])
+				ip, err = parseIPv4(strings.Split(foreign, ":")[0])
 			}
 
 			socket.ForeignAddress.IP = ip
