@@ -7,6 +7,7 @@ import (
 	"bufio"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"strconv"
@@ -105,57 +106,18 @@ func Parse(device io.Reader, opts ...ParseOptionSet) ([]Socket, error) {
 			fields: fields,
 		}
 
+		var err error
+
 		// local address
-		local := fields[1]
-		if len(strings.Split(local, ":")) != 2 {
+		socket.LocalAddress.IP, socket.LocalAddress.Port, err = parseIPPort(fields[1])
+		if err != nil {
 			continue
-		} else {
-			var (
-				ip  net.IP
-				err error
-			)
-			if o.ipv6 {
-				ip, err = parseIPv6(strings.Split(local, ":")[0])
-			} else {
-				ip, err = parseIPv4(strings.Split(local, ":")[0])
-			}
-			if err != nil {
-				continue
-			}
-
-			socket.LocalAddress.IP = ip
-
-			port, err := strconv.ParseInt(strings.Split(local, ":")[1], 16, 32)
-			if err != nil {
-				continue
-			}
-
-			socket.LocalAddress.Port = int(port)
 		}
 
 		// foreign address
-		foreign := fields[2]
-		if len(strings.Split(local, ":")) != 2 {
+		socket.ForeignAddress.IP, socket.ForeignAddress.Port, err = parseIPPort(fields[2])
+		if err != nil {
 			continue
-		} else {
-			var (
-				ip  net.IP
-				err error
-			)
-			if o.ipv6 {
-				ip, err = parseIPv6(strings.Split(local, ":")[0])
-			} else {
-				ip, err = parseIPv4(strings.Split(local, ":")[0])
-			}
-
-			socket.ForeignAddress.IP = ip
-
-			port, err := strconv.ParseInt(strings.Split(foreign, ":")[1], 16, 32)
-			if err != nil {
-				continue
-			}
-
-			socket.ForeignAddress.Port = int(port)
 		}
 
 		// state
@@ -187,6 +149,39 @@ func Parse(device io.Reader, opts ...ParseOptionSet) ([]Socket, error) {
 	}
 
 	return sockets, nil
+}
+
+func parseIPPort(ipport string) (ip net.IP, port int, err error) {
+	split := strings.Split(ipport, ":")
+	if len(split) != 2 {
+		return nil, 0, &net.ParseError{
+			Type: "invalid format",
+			Text: fmt.Sprintf("ipport string %q can only have 1 colon", ipport),
+		}
+	}
+	ipStr, portStr := split[0], split[1]
+
+	switch len(ipStr) {
+	case 8:
+		ip, err = parseIPv4(ipStr)
+	case 32:
+		ip, err = parseIPv6(ipStr)
+	default:
+		err = &net.ParseError{
+			Type: "IP address",
+			Text: fmt.Sprintf("len of ip string %q invalid", ipStr),
+		}
+	}
+	if err != nil {
+		return nil, 0, err
+	}
+
+	p, err := strconv.ParseInt(portStr, 16, 32)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return ip, int(p), err
 }
 
 func parseIPv4(ips string) (net.IP, error) {
